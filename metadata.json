@@ -1,0 +1,5 @@
+{
+  "name": "CodeSync - Coding Consistency Tracker",
+  "description": "Track and compare coding consistency across LeetCode and GeeksforGeeks with friends. Features streaks, leaderboards, and Consistency DNA analytics.",
+  "requestFramePermissions": []
+}

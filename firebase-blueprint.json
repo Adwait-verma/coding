@@ -1,0 +1,62 @@
+{
+  "entities": {
+    "User": {
+      "title": "User",
+      "description": "User profile and platform connections",
+      "type": "object",
+      "properties": {
+        "uid": { "type": "string" },
+        "displayName": { "type": "string" },
+        "email": { "type": "string" },
+        "leetcodeUsername": { "type": "string" },
+        "gfgUsername": { "type": "string" },
+        "photoURL": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "consistencyDNA": { "type": "string", "enum": ["Consistent", "Burst coder", "Weekend coder", "Irregular"] }
+      },
+      "required": ["uid", "email"]
+    },
+    "Stats": {
+      "title": "Stats",
+      "description": "Daily coding statistics for a user",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string" },
+        "date": { "type": "string", "format": "date" },
+        "leetcodeSolved": { "type": "integer" },
+        "gfgSolved": { "type": "integer" },
+        "totalSolved": { "type": "integer" },
+        "points": { "type": "integer" },
+        "streak": { "type": "integer" }
+      },
+      "required": ["userId", "date"]
+    },
+    "Group": {
+      "title": "Group",
+      "description": "Private coding circles",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "name": { "type": "string" },
+        "ownerId": { "type": "string" },
+        "members": { "type": "array", "items": { "type": "string" } },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["name", "ownerId"]
+    }
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": "User",
+      "description": "User profiles"
+    },
+    "/stats/{userId}/daily/{date}": {
+      "schema": "Stats",
+      "description": "Daily user stats"
+    },
+    "/groups/{groupId}": {
+      "schema": "Group",
+      "description": "Coding circles"
+    }
+  }
+}
