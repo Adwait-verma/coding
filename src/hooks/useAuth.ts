@@ -1,45 +1,89 @@
 import { useState, useEffect } from 'react';
-import { onAuthStateChanged, User } from 'firebase/auth';
 import { doc, getDoc, setDoc } from 'firebase/firestore';
-import { auth, db } from '../lib/firebase';
+import { db } from '../lib/firebase';
 import { UserProfile } from '../types';
 
 export function useAuth() {
-  const [user, setUser] = useState<User | null>(null);
+  const [user, setUser] = useState<{ uid: string } | null>(null);
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
-      try {
-        setUser(firebaseUser);
-        if (firebaseUser) {
-          const userDoc = await getDoc(doc(db, 'users', firebaseUser.uid));
-          if (userDoc.exists()) {
-            setProfile(userDoc.data() as UserProfile);
-          } else {
-            const newProfile: UserProfile = {
-              uid: firebaseUser.uid,
-              displayName: firebaseUser.displayName || 'Anonymous',
-              email: firebaseUser.email || '',
-              photoURL: firebaseUser.photoURL || '',
-              createdAt: new Date().toISOString(),
-            };
-            await setDoc(doc(db, 'users', firebaseUser.uid), newProfile);
-            setProfile(newProfile);
-          }
-        } else {
-          setProfile(null);
-        }
-      } catch (error) {
-        console.error("Error in auth state change:", error);
-      } finally {
-        setLoading(false);
-      }
-    });
-
-    return () => unsubscribe();
+    const storedUid = localStorage.getItem('codesync_uid');
+    if (storedUid) {
+      fetchProfile(storedUid);
+    } else {
+      setLoading(false);
+    }
   }, []);
 
-  return { user, profile, loading };
+  const fetchProfile = async (uid: string) => {
+    setLoading(true);
+    try {
+      const userDoc = await getDoc(doc(db, 'users', uid));
+      if (userDoc.exists()) {
+        setProfile(userDoc.data() as UserProfile);
+        setUser({ uid });
+      } else {
+        localStorage.removeItem('codesync_uid');
+        setUser(null);
+        setProfile(null);
+      }
+    } catch (error) {
+      console.error("Error fetching profile:", error);
+      localStorage.removeItem('codesync_uid');
+      setUser(null);
+      setProfile(null);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const login = async (handles: { leetcode?: string; gfg?: string; codeforces?: string }) => {
+    setLoading(true);
+    const uid = handles.leetcode || handles.gfg || handles.codeforces || `user_${Date.now()}`;
+    
+    try {
+      const userDocRef = doc(db, 'users', uid);
+      const userDoc = await getDoc(userDocRef);
+      let currentProfile: UserProfile;
+
+      if (userDoc.exists()) {
+        currentProfile = {
+          ...(userDoc.data() as UserProfile),
+          leetcodeUsername: handles.leetcode || (userDoc.data() as UserProfile).leetcodeUsername,
+          gfgUsername: handles.gfg || (userDoc.data() as UserProfile).gfgUsername,
+          codeforcesId: handles.codeforces || (userDoc.data() as UserProfile).codeforcesId,
+        };
+      } else {
+        currentProfile = {
+          uid,
+          displayName: uid,
+          email: '',
+          leetcodeUsername: handles.leetcode,
+          gfgUsername: handles.gfg,
+          codeforcesId: handles.codeforces,
+          createdAt: new Date().toISOString(),
+        };
+      }
+
+      await setDoc(userDocRef, currentProfile);
+      localStorage.setItem('codesync_uid', uid);
+      setProfile(currentProfile);
+      setUser({ uid });
+    } catch (error: any) {
+      console.error("Login failed:", error);
+      throw error;
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const logout = () => {
+    localStorage.removeItem('codesync_uid');
+    setUser(null);
+    setProfile(null);
+  };
+
+  return { user, profile, loading, login, logout };
 }

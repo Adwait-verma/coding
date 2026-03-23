@@ -56,7 +56,7 @@ export function Profile({ profile }: ProfileProps) {
             </div>
             <div>
               <h2 className="text-xl font-bold text-white">{profile.displayName}</h2>
-              <p className="text-zinc-500 text-sm">{profile.email}</p>
+              <p className="text-zinc-500 text-sm">Handle-based Account</p>
             </div>
           </div>
 

@@ -14,7 +14,6 @@ export function Leaderboard() {
 
   useEffect(() => {
     const fetchLeaderboard = async () => {
-      if (!auth.currentUser) return;
       setLoading(true);
       try {
         const usersSnap = await getDocs(collection(db, 'users'));

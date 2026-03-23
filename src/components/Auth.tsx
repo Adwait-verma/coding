@@ -1,31 +1,33 @@
 import React, { useState } from 'react';
-import { auth } from '../lib/firebase';
-import { GoogleAuthProvider, signInWithPopup } from 'firebase/auth';
-import { Code2, Github, Chrome, AlertCircle, ExternalLink } from 'lucide-react';
+import { useAuth } from '../hooks/useAuth';
+import { Code2, Github, Chrome, AlertCircle, ExternalLink, User, Terminal } from 'lucide-react';
 import { motion } from 'motion/react';
 
 export function Auth() {
+  const { login } = useAuth();
+  const [handles, setHandles] = useState({
+    leetcode: '',
+    gfg: '',
+    codeforces: ''
+  });
   const [error, setError] = useState<string | null>(null);
+  const [loading, setLoading] = useState(false);
 
-  const handleGoogleLogin = async () => {
-    const provider = new GoogleAuthProvider();
-    setError(null);
-    try {
-      await signInWithPopup(auth, provider);
-    } catch (err: any) {
-      console.error("Login failed", err);
-      if (err.code === 'auth/popup-blocked') {
-        setError("Popup was blocked by your browser. Please allow popups or open the app in a new tab.");
-      } else if (err.code === 'auth/cancelled-by-user') {
-        setError("Login was cancelled.");
-      } else {
-        setError(err.message || "Login failed. Please try again.");
-      }
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!handles.leetcode && !handles.gfg && !handles.codeforces) {
+      setError("Please enter at least one platform handle to continue.");
+      return;
     }
-  };
 
-  const openInNewTab = () => {
-    window.open(window.location.href, '_blank');
+    setLoading(true);
+    try {
+      await login(handles);
+    } catch (err: any) {
+      setError("Failed to connect. Please check your handles and try again.");
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -33,7 +35,7 @@ export function Auth() {
       <motion.div 
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
-        className="w-full max-w-md bg-zinc-900 border border-zinc-800 rounded-3xl p-8 text-center"
+        className="w-full max-w-md bg-zinc-900 border border-zinc-800 rounded-3xl p-8"
       >
         <div className="flex justify-center mb-6">
           <div className="p-4 bg-emerald-500/10 rounded-2xl">
@@ -41,45 +43,78 @@ export function Auth() {
           </div>
         </div>
         
-        <h1 className="text-3xl font-bold text-white mb-2 tracking-tight">CodeSync</h1>
-        <p className="text-zinc-400 mb-8">Track your coding consistency with friends across platforms.</p>
+        <div className="text-center mb-8">
+          <h1 className="text-3xl font-bold text-white mb-2 tracking-tight">CodeSync</h1>
+          <p className="text-zinc-400">Enter your platform handles to sync your progress.</p>
+        </div>
         
         {error && (
-          <div className="mb-6 p-4 bg-red-500/10 border border-red-500/20 rounded-2xl flex flex-col items-center gap-3 text-red-500 text-sm">
-            <div className="flex items-center gap-2">
-              <AlertCircle className="w-5 h-5" />
-              <p className="font-medium">{error}</p>
-            </div>
-            <button 
-              onClick={openInNewTab}
-              className="flex items-center gap-2 px-4 py-2 bg-red-500/20 hover:bg-red-500/30 rounded-xl transition-all font-bold"
-            >
-              <ExternalLink className="w-4 h-4" />
-              Open in New Tab
-            </button>
+          <div className="mb-6 p-4 bg-red-500/10 border border-red-500/20 rounded-2xl flex items-center gap-3 text-red-500 text-sm">
+            <AlertCircle className="w-5 h-5 flex-shrink-0" />
+            <p className="font-medium">{error}</p>
           </div>
         )}
 
-        <div className="space-y-4">
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div>
+            <label className="block text-xs font-semibold text-zinc-500 uppercase tracking-wider mb-2 ml-1">
+              LeetCode Handle
+            </label>
+            <div className="relative">
+              <User className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-zinc-500" />
+              <input
+                type="text"
+                placeholder="e.g. adwait_verma"
+                value={handles.leetcode}
+                onChange={(e) => setHandles(prev => ({ ...prev, leetcode: e.target.value }))}
+                className="w-full bg-zinc-800 border border-zinc-700 rounded-2xl py-4 pl-12 pr-4 text-white placeholder:text-zinc-600 focus:outline-none focus:ring-2 focus:ring-emerald-500/50 transition-all"
+              />
+            </div>
+          </div>
+
+          <div>
+            <label className="block text-xs font-semibold text-zinc-500 uppercase tracking-wider mb-2 ml-1">
+              GeeksforGeeks Handle
+            </label>
+            <div className="relative">
+              <Terminal className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-zinc-500" />
+              <input
+                type="text"
+                placeholder="e.g. vermaadwait7"
+                value={handles.gfg}
+                onChange={(e) => setHandles(prev => ({ ...prev, gfg: e.target.value }))}
+                className="w-full bg-zinc-800 border border-zinc-700 rounded-2xl py-4 pl-12 pr-4 text-white placeholder:text-zinc-600 focus:outline-none focus:ring-2 focus:ring-emerald-500/50 transition-all"
+              />
+            </div>
+          </div>
+
+          <div>
+            <label className="block text-xs font-semibold text-zinc-500 uppercase tracking-wider mb-2 ml-1">
+              Codeforces Handle
+            </label>
+            <div className="relative">
+              <Terminal className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-zinc-500" />
+              <input
+                type="text"
+                placeholder="e.g. tourist"
+                value={handles.codeforces}
+                onChange={(e) => setHandles(prev => ({ ...prev, codeforces: e.target.value }))}
+                className="w-full bg-zinc-800 border border-zinc-700 rounded-2xl py-4 pl-12 pr-4 text-white placeholder:text-zinc-600 focus:outline-none focus:ring-2 focus:ring-emerald-500/50 transition-all"
+              />
+            </div>
+          </div>
+
           <button
-            onClick={handleGoogleLogin}
-            className="w-full flex items-center justify-center gap-3 bg-white text-black font-semibold py-4 rounded-2xl hover:bg-zinc-200 transition-all"
+            type="submit"
+            disabled={loading}
+            className="w-full bg-emerald-500 hover:bg-emerald-600 disabled:opacity-50 disabled:cursor-not-allowed text-black font-bold py-4 rounded-2xl transition-all mt-4 shadow-lg shadow-emerald-500/20"
           >
-            <Chrome className="w-5 h-5" />
-            Continue with Google
+            {loading ? 'Connecting...' : 'Start Syncing'}
           </button>
-          
-          <button
-            disabled
-            className="w-full flex items-center justify-center gap-3 bg-zinc-800 text-zinc-400 font-semibold py-4 rounded-2xl opacity-50 cursor-not-allowed"
-          >
-            <Github className="w-5 h-5" />
-            Continue with GitHub (Coming Soon)
-          </button>
-        </div>
+        </form>
         
-        <p className="mt-8 text-xs text-zinc-500">
-          By continuing, you agree to our Terms of Service and Privacy Policy.
+        <p className="mt-8 text-center text-xs text-zinc-500">
+          Your data is fetched from public platform APIs.
         </p>
       </motion.div>
     </div>

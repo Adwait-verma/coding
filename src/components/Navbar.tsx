@@ -1,7 +1,6 @@
 import React from 'react';
 import { Layout, Trophy, Users, User, LogOut, Code2 } from 'lucide-react';
-import { auth } from '../lib/firebase';
-import { signOut } from 'firebase/auth';
+import { useAuth } from '../hooks/useAuth';
 import { cn } from '../lib/utils';
 
 interface NavbarProps {
@@ -11,6 +10,7 @@ interface NavbarProps {
 }
 
 export function Navbar({ activeTab, setActiveTab, user }: NavbarProps) {
+  const { logout } = useAuth();
   const navItems = [
     { id: 'dashboard', label: 'Dashboard', icon: Layout },
     { id: 'leaderboard', label: 'Leaderboard', icon: Trophy },
@@ -44,7 +44,7 @@ export function Navbar({ activeTab, setActiveTab, user }: NavbarProps) {
         
         {user && (
           <button
-            onClick={() => signOut(auth)}
+            onClick={logout}
             className="hidden md:flex items-center gap-3 px-4 py-3 mt-auto text-zinc-400 hover:text-red-400 hover:bg-red-400/10 rounded-xl transition-all"
           >
             <LogOut className="w-6 h-6" />
